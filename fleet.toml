@@ -1,0 +1,39 @@
+owner = "maxbeizer"
+
+[discovery]
+auto = true
+exclude = ["gh-aw-trial", "gh-combine-dependabot-prs"]
+
+[[sync.files]]
+canon = "canon/copilot-instructions.md"
+target = ".github/copilot-instructions.md"
+
+[[sync.files]]
+canon = "canon/ci.yml"
+target = ".github/workflows/ci.yml"
+
+[[sync.files]]
+canon = "canon/release.yml"
+target = ".github/workflows/release.yml"
+
+[[sync.files]]
+canon = "canon/goreleaser.yml"
+target = ".goreleaser.yml"
+
+[[sync.files]]
+canon = "canon/LICENSE"
+target = "LICENSE"
+
+[[sync.files]]
+canon = "canon/Makefile"
+target = "Makefile"
+template = true
+
+[sync.template_vars]
+GO_MIN_MAJOR = "1"
+GO_MIN_MINOR = "24"
+GO_MIN_PATCH = "0"
+
+[catalog]
+output = "README.md"
+header = "canon/readme-header.md"
