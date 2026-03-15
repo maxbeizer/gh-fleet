@@ -31,14 +31,13 @@ func runStatus(args []string) error {
 	gh.FetchGoVersions(cfg.Owner, repos)
 
 	// Header
-	fmt.Printf("%-28s %-10s %-8s %-6s %-12s\n",
+	fmt.Printf("%-28s %-10s %-8s %-12s\n",
 		boldStyle.Render("Extension"),
 		boldStyle.Render("Language"),
 		boldStyle.Render("Go"),
-		boldStyle.Render("Stars"),
 		boldStyle.Render("Last Push"),
 	)
-	fmt.Println(strings.Repeat("─", 70))
+	fmt.Println(strings.Repeat("─", 62))
 
 	for _, r := range repos {
 		goVer := r.GoVersion
@@ -60,8 +59,8 @@ func runStatus(args []string) error {
 			agoStyle = errStyle
 		}
 
-		fmt.Printf("%-28s %-10s %-8s ⭐%-4d %s\n",
-			r.Name, lang, goVer, r.Stars, agoStyle.Render(ago))
+		fmt.Printf("%-28s %-10s %-8s %s\n",
+			r.Name, lang, goVer, agoStyle.Render(ago))
 	}
 
 	fmt.Printf("\n%s extensions total\n", boldStyle.Render(fmt.Sprintf("%d", len(repos))))

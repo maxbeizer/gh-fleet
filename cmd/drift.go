@@ -102,7 +102,7 @@ func discoverRepos(cfg *fleet.Config) ([]gh.Repo, error) {
 
 	var filtered []gh.Repo
 	for _, r := range repos {
-		if cfg.IsExcluded(r.Name) || r.IsArchived {
+		if cfg.IsExcluded(r.Name) || r.IsArchived || r.IsFork || r.IsPrivate {
 			continue
 		}
 		filtered = append(filtered, r)

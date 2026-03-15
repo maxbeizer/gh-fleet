@@ -16,6 +16,8 @@ type Repo struct {
 	URL             string    `json:"url"`
 	Stars           int       `json:"stargazerCount"`
 	IsArchived      bool      `json:"isArchived"`
+	IsFork          bool      `json:"isFork"`
+	IsPrivate       bool      `json:"isPrivate"`
 	PrimaryLanguage string    `json:"primaryLanguage"`
 	PushedAt        time.Time `json:"pushedAt"`
 	GoVersion       string    // populated separately from go.mod
@@ -27,6 +29,8 @@ type repoJSON struct {
 	URL             string          `json:"url"`
 	Stars           int             `json:"stargazerCount"`
 	IsArchived      bool            `json:"isArchived"`
+	IsFork          bool            `json:"isFork"`
+	IsPrivate       bool            `json:"isPrivate"`
 	PrimaryLanguage json.RawMessage `json:"primaryLanguage"`
 	PushedAt        time.Time       `json:"pushedAt"`
 }
@@ -34,7 +38,7 @@ type repoJSON struct {
 // ListGHRepos returns all gh-* repos for the given owner.
 func ListGHRepos(owner string) ([]Repo, error) {
 	out, err := exec.Command("gh", "repo", "list", owner,
-		"--json", "name,description,url,stargazerCount,isArchived,primaryLanguage,pushedAt",
+		"--json", "name,description,url,stargazerCount,isArchived,isFork,isPrivate,primaryLanguage,pushedAt",
 		"--limit", "200",
 	).Output()
 	if err != nil {
@@ -58,6 +62,8 @@ func ListGHRepos(owner string) ([]Repo, error) {
 			URL:             r.URL,
 			Stars:           r.Stars,
 			IsArchived:      r.IsArchived,
+			IsFork:          r.IsFork,
+			IsPrivate:       r.IsPrivate,
 			PrimaryLanguage: lang,
 			PushedAt:        r.PushedAt,
 		})
