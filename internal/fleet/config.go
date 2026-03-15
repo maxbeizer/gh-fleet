@@ -14,6 +14,7 @@ type Config struct {
 	Discovery DiscoveryConfig `toml:"discovery"`
 	Sync      SyncConfig      `toml:"sync"`
 	Catalog   CatalogConfig   `toml:"catalog"`
+	Dir       string          `toml:"-"` // directory containing fleet.toml
 }
 
 type DiscoveryConfig struct {
@@ -37,6 +38,31 @@ type CatalogConfig struct {
 	Header string `toml:"header"`
 }
 
+// FindConfigDir locates fleet.toml by checking: the given dir, CWD, then
+// ~/code/gh-fleet. Returns the directory containing fleet.toml.
+func FindConfigDir(hint string) (string, error) {
+	candidates := []string{hint}
+
+	if cwd, err := os.Getwd(); err == nil && cwd != hint {
+		candidates = append(candidates, cwd)
+	}
+
+	if home, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates, filepath.Join(home, "code", "gh-fleet"))
+	}
+
+	for _, dir := range candidates {
+		if dir == "" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(dir, "fleet.toml")); err == nil {
+			return dir, nil
+		}
+	}
+
+	return "", fmt.Errorf("fleet.toml not found (checked %v)", candidates)
+}
+
 // LoadConfig reads fleet.toml from the given directory (or cwd).
 func LoadConfig(dir string) (*Config, error) {
 	path := filepath.Join(dir, "fleet.toml")
@@ -50,6 +76,7 @@ func LoadConfig(dir string) (*Config, error) {
 		return nil, fmt.Errorf("parsing fleet.toml: %w", err)
 	}
 
+	cfg.Dir = dir
 	return &cfg, nil
 }
 

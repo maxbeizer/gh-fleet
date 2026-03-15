@@ -27,7 +27,7 @@ func runDrift(args []string) error {
 		return err
 	}
 
-	cfg, err := fleet.LoadConfig(*configDir)
+	cfg, err := loadConfig(*configDir)
 	if err != nil {
 		return err
 	}

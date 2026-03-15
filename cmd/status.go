@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/gh-fleet/internal/fleet"
 	gh "github.com/maxbeizer/gh-fleet/internal/github"
 )
 
@@ -18,7 +17,7 @@ func runStatus(args []string) error {
 		return err
 	}
 
-	cfg, err := fleet.LoadConfig(*configDir)
+	cfg, err := loadConfig(*configDir)
 	if err != nil {
 		return err
 	}

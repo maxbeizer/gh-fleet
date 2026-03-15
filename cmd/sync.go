@@ -20,7 +20,7 @@ func runSync(args []string) error {
 		return err
 	}
 
-	cfg, err := fleet.LoadConfig(*configDir)
+	cfg, err := loadConfig(*configDir)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func runSync(args []string) error {
 	totalChanges := 0
 
 	for _, sf := range syncFiles {
-		canonPath := filepath.Join(*configDir, sf.Canon)
+		canonPath := filepath.Join(cfg.Dir, sf.Canon)
 		canonContent, err := os.ReadFile(canonPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "⚠️  Skipping %s: %v\n", sf.Canon, err)

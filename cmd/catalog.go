@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/gh-fleet/internal/fleet"
 	gh "github.com/maxbeizer/gh-fleet/internal/github"
 )
 
@@ -20,7 +19,7 @@ func runCatalog(args []string) error {
 		return err
 	}
 
-	cfg, err := fleet.LoadConfig(*configDir)
+	cfg, err := loadConfig(*configDir)
 	if err != nil {
 		return err
 	}
@@ -52,7 +51,7 @@ func runCatalog(args []string) error {
 
 	// Header
 	if cfg.Catalog.Header != "" {
-		headerPath := filepath.Join(*configDir, cfg.Catalog.Header)
+		headerPath := filepath.Join(cfg.Dir, cfg.Catalog.Header)
 		header, err := os.ReadFile(headerPath)
 		if err == nil {
 			sb.Write(header)
@@ -88,7 +87,7 @@ func runCatalog(args []string) error {
 	if output == "" {
 		output = "README.md"
 	}
-	outputPath := filepath.Join(*configDir, output)
+	outputPath := filepath.Join(cfg.Dir, output)
 
 	if err := os.WriteFile(outputPath, []byte(sb.String()), 0644); err != nil {
 		return fmt.Errorf("writing catalog: %w", err)
