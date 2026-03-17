@@ -164,6 +164,54 @@ func GetDefaultBranch(owner, repo string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+// RepoSettings holds the desired repository settings.
+type RepoSettings struct {
+	HasWiki              bool `json:"has_wiki"`
+	DeleteBranchOnMerge  bool `json:"delete_branch_on_merge"`
+	AllowSquashMerge     bool `json:"allow_squash_merge"`
+	AllowMergeCommit     bool `json:"allow_merge_commit"`
+	AllowRebaseMerge     bool `json:"allow_rebase_merge"`
+}
+
+// RepoCurrentSettings holds the current relevant settings fetched from the API.
+type RepoCurrentSettings struct {
+	HasWiki              bool `json:"has_wiki"`
+	DeleteBranchOnMerge  bool `json:"delete_branch_on_merge"`
+	AllowSquashMerge     bool `json:"allow_squash_merge"`
+	AllowMergeCommit     bool `json:"allow_merge_commit"`
+	AllowRebaseMerge     bool `json:"allow_rebase_merge"`
+}
+
+// GetRepoSettings fetches the current settings for a repo.
+func GetRepoSettings(owner, repo string) (*RepoCurrentSettings, error) {
+	out, err := exec.Command("gh", "api",
+		fmt.Sprintf("repos/%s/%s", owner, repo),
+		"-q", `{has_wiki,delete_branch_on_merge,allow_squash_merge,allow_merge_commit,allow_rebase_merge}`,
+	).Output()
+	if err != nil {
+		return nil, fmt.Errorf("fetching settings for %s/%s: %w", owner, repo, err)
+	}
+	var s RepoCurrentSettings
+	if err := json.Unmarshal(out, &s); err != nil {
+		return nil, fmt.Errorf("parsing settings for %s/%s: %w", owner, repo, err)
+	}
+	return &s, nil
+}
+
+// UpdateRepoSettings applies the desired settings to a repo via PATCH.
+func UpdateRepoSettings(owner, repo string, settings RepoSettings) error {
+	return exec.Command("gh", "api",
+		fmt.Sprintf("repos/%s/%s", owner, repo),
+		"-X", "PATCH",
+		"-F", fmt.Sprintf("has_wiki=%t", settings.HasWiki),
+		"-F", fmt.Sprintf("delete_branch_on_merge=%t", settings.DeleteBranchOnMerge),
+		"-F", fmt.Sprintf("allow_squash_merge=%t", settings.AllowSquashMerge),
+		"-F", fmt.Sprintf("allow_merge_commit=%t", settings.AllowMergeCommit),
+		"-F", fmt.Sprintf("allow_rebase_merge=%t", settings.AllowRebaseMerge),
+		"--silent",
+	).Run()
+}
+
 // CreateBranchAndPR creates a branch, commits a file change, and opens a PR.
 func CreateBranchAndPR(owner, repo, branch, targetPath, content, commitMsg, prTitle, prBody string) error {
 	// Get default branch SHA
