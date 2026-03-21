@@ -1,5 +1,3 @@
-project_name: gh-extension-template
-
 builds:
   - binary: gh-extension-template
     goos:

@@ -6,9 +6,9 @@ EXTENSION_NAME ?= extension-template
 
 BINARY ?= bin/gh-$(EXTENSION_NAME)
 GO ?= go
-GO_MIN_MAJOR ?= 1
-GO_MIN_MINOR ?= 21
-GO_MIN_PATCH ?= 0
+GO_MIN_MAJOR ?= ${GO_MIN_MAJOR}
+GO_MIN_MINOR ?= ${GO_MIN_MINOR}
+GO_MIN_PATCH ?= ${GO_MIN_PATCH}
 
 check-go-version:
 	@current="$$( $(GO) env GOVERSION 2>/dev/null | sed 's/^go//' )"; \

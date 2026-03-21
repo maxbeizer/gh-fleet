@@ -78,7 +78,11 @@ func runSync(args []string) error {
 				totalChanges++
 
 				if !*dryRun {
-					if err := syncFile(cfg.Owner, r.Name, sf.Target, content); err != nil {
+					fileContent := content
+					if sf.SkipIfExists {
+						fileContent = scaffoldCopilotInstructions(r)
+					}
+					if err := syncFile(cfg.Owner, r.Name, sf.Target, fileContent); err != nil {
 						fmt.Fprintf(os.Stderr, "    ❌ %v\n", err)
 					} else {
 						fmt.Printf("    %s PR created\n", okStyle.Render("✅"))
@@ -89,6 +93,11 @@ func runSync(args []string) error {
 
 			// Compare
 			if strings.TrimSpace(remote) != strings.TrimSpace(content) {
+				if sf.SkipIfExists {
+					fmt.Printf("  %s %s %s\n", dimStyle.Render("⊘"), r.Name, dimStyle.Render("(exists, skipped)"))
+					continue
+				}
+
 				fmt.Printf("  %s %s %s\n", warnStyle.Render("⇄"), r.Name, dimStyle.Render("(differs)"))
 				totalChanges++
 
@@ -123,4 +132,34 @@ func syncFile(owner, repo, targetPath, content string) error {
 		owner, targetPath)
 
 	return gh.CreateBranchAndPR(owner, repo, branch, targetPath, content, commitMsg, prTitle, prBody)
+}
+
+func scaffoldCopilotInstructions(r gh.Repo) string {
+	extName := strings.TrimPrefix(r.Name, "gh-")
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Copilot Instructions for %s\n\n", r.Name)
+
+	if r.Description != "" {
+		fmt.Fprintf(&b, "## Project Overview\n%s\n\n", r.Description)
+	} else {
+		fmt.Fprintf(&b, "## Project Overview\n`%s` is a GitHub CLI extension.\n\n", extName)
+	}
+
+	b.WriteString("## Technology Stack\n")
+	if r.PrimaryLanguage != "" {
+		fmt.Fprintf(&b, "- **Language**: %s\n", r.PrimaryLanguage)
+	}
+	b.WriteString("- **Framework**: GitHub CLI (`gh`) extension\n")
+	if r.GoVersion != "" {
+		fmt.Fprintf(&b, "- **Go version**: %s+\n", r.GoVersion)
+	}
+	b.WriteString("\n")
+
+	b.WriteString("## Development\n")
+	fmt.Fprintf(&b, "- Build: `go build -o %s` or use `make`\n", r.Name)
+	fmt.Fprintf(&b, "- Run: `gh %s`\n", extName)
+	b.WriteString("- Test: `go test ./...`\n")
+
+	return b.String()
 }

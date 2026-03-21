@@ -7,6 +7,7 @@ exclude = ["gh-aw-trial", "gh-combine-dependabot-prs"]
 [[sync.files]]
 canon = "canon/copilot-instructions.md"
 target = ".github/copilot-instructions.md"
+skip_if_exists = true
 
 [[sync.files]]
 canon = "canon/ci.yml"
@@ -19,6 +20,7 @@ target = ".github/workflows/release.yml"
 [[sync.files]]
 canon = "canon/goreleaser.yml"
 target = ".goreleaser.yml"
+template = true
 
 [[sync.files]]
 canon = "canon/LICENSE"

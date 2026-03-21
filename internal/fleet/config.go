@@ -23,9 +23,10 @@ type DiscoveryConfig struct {
 }
 
 type SyncFile struct {
-	Canon    string `toml:"canon"`
-	Target   string `toml:"target"`
-	Template bool   `toml:"template"`
+	Canon        string `toml:"canon"`
+	Target       string `toml:"target"`
+	Template     bool   `toml:"template"`
+	SkipIfExists bool   `toml:"skip_if_exists"`
 }
 
 type SyncConfig struct {
