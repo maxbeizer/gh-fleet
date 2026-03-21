@@ -6,10 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/maxbeizer/gh-fleet/internal/fleet"
 	gh "github.com/maxbeizer/gh-fleet/internal/github"
 )
+
+type syncResult struct {
+	lines   []string
+	changes int
+}
 
 func runSync(args []string) error {
 	fs := flag.NewFlagSet("sync", flag.ContinueOnError)
@@ -58,59 +64,91 @@ func runSync(args []string) error {
 
 		fmt.Printf("\n%s → %s\n", boldStyle.Render(sf.Canon), sf.Target)
 
-		for _, r := range repos {
-			content := string(canonContent)
+		results := make([]syncResult, len(repos))
+		var wg sync.WaitGroup
+		sem := make(chan struct{}, 5)
 
-			// Apply template variables
-			if sf.Template {
-				extName := strings.TrimPrefix(r.Name, "gh-")
-				content = strings.ReplaceAll(content, "extension-template", extName)
-				for k, v := range cfg.Sync.TemplateVars {
-					content = strings.ReplaceAll(content, fmt.Sprintf("${%s}", k), v)
+		for i, r := range repos {
+			wg.Add(1)
+			go func(idx int, r gh.Repo, sf fleet.SyncFile) {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				res := &results[idx]
+				content := string(canonContent)
+
+				// Apply template variables
+				if sf.Template {
+					extName := strings.TrimPrefix(r.Name, "gh-")
+					content = strings.ReplaceAll(content, "extension-template", extName)
+					for k, v := range cfg.Sync.TemplateVars {
+						content = strings.ReplaceAll(content, fmt.Sprintf("${%s}", k), v)
+					}
 				}
-			}
 
-			// Fetch current content
-			remote, err := gh.FetchFileContent(cfg.Owner, r.Name, sf.Target)
-			if err != nil {
-				// File doesn't exist — needs sync
-				fmt.Printf("  %s %s %s\n", errStyle.Render("➕"), r.Name, dimStyle.Render("(missing)"))
-				totalChanges++
+				// Fetch current content
+				remote, err := gh.FetchFileContent(cfg.Owner, r.Name, sf.Target)
+				if err != nil {
+					// File doesn't exist — needs sync
+					res.lines = append(res.lines, fmt.Sprintf("  %s %s %s", errStyle.Render("➕"), r.Name, dimStyle.Render("(missing)")))
+					res.changes++
 
-				if !*dryRun {
-					fileContent := content
+					if sf.SkipIfExists && *dryRun {
+						preview := scaffoldCopilotInstructions(r)
+						previewLines := strings.SplitN(preview, "\n", 6)
+						if len(previewLines) > 5 {
+							previewLines = previewLines[:5]
+						}
+						for _, pl := range previewLines {
+							res.lines = append(res.lines, fmt.Sprintf("    %s", dimStyle.Render(pl)))
+						}
+					}
+
+					if !*dryRun {
+						fileContent := content
+						if sf.SkipIfExists {
+							fileContent = scaffoldCopilotInstructions(r)
+						}
+						if err := syncFile(cfg.Owner, r.Name, sf.Target, fileContent); err != nil {
+							res.lines = append(res.lines, fmt.Sprintf("    ❌ %v", err))
+						} else {
+							res.lines = append(res.lines, fmt.Sprintf("    %s PR created", okStyle.Render("✅")))
+						}
+					}
+					return
+				}
+
+				// Compare
+				if strings.TrimSpace(remote) != strings.TrimSpace(content) {
 					if sf.SkipIfExists {
-						fileContent = scaffoldCopilotInstructions(r)
+						res.lines = append(res.lines, fmt.Sprintf("  %s %s %s", dimStyle.Render("⊘"), r.Name, dimStyle.Render("(exists, skipped)")))
+						return
 					}
-					if err := syncFile(cfg.Owner, r.Name, sf.Target, fileContent); err != nil {
-						fmt.Fprintf(os.Stderr, "    ❌ %v\n", err)
-					} else {
-						fmt.Printf("    %s PR created\n", okStyle.Render("✅"))
+
+					res.lines = append(res.lines, fmt.Sprintf("  %s %s %s", warnStyle.Render("⇄"), r.Name, dimStyle.Render("(differs)")))
+					res.changes++
+
+					if !*dryRun {
+						if err := syncFile(cfg.Owner, r.Name, sf.Target, content); err != nil {
+							res.lines = append(res.lines, fmt.Sprintf("    ❌ %v", err))
+						} else {
+							res.lines = append(res.lines, fmt.Sprintf("    %s PR created", okStyle.Render("✅")))
+						}
 					}
+				} else {
+					res.lines = append(res.lines, fmt.Sprintf("  %s %s", okStyle.Render("✅"), r.Name))
 				}
-				continue
+			}(i, r, sf)
+		}
+		wg.Wait()
+
+		// Print results in order and tally changes
+		for _, res := range results {
+			for _, line := range res.lines {
+				fmt.Println(line)
 			}
-
-			// Compare
-			if strings.TrimSpace(remote) != strings.TrimSpace(content) {
-				if sf.SkipIfExists {
-					fmt.Printf("  %s %s %s\n", dimStyle.Render("⊘"), r.Name, dimStyle.Render("(exists, skipped)"))
-					continue
-				}
-
-				fmt.Printf("  %s %s %s\n", warnStyle.Render("⇄"), r.Name, dimStyle.Render("(differs)"))
-				totalChanges++
-
-				if !*dryRun {
-					if err := syncFile(cfg.Owner, r.Name, sf.Target, content); err != nil {
-						fmt.Fprintf(os.Stderr, "    ❌ %v\n", err)
-					} else {
-						fmt.Printf("    %s PR created\n", okStyle.Render("✅"))
-					}
-				}
-			} else {
-				fmt.Printf("  %s %s\n", okStyle.Render("✅"), r.Name)
-			}
+			totalChanges += res.changes
 		}
 	}
 
