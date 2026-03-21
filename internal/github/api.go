@@ -39,7 +39,7 @@ type repoJSON struct {
 func ListGHRepos(owner string) ([]Repo, error) {
 	out, err := exec.Command("gh", "repo", "list", owner,
 		"--json", "name,description,url,stargazerCount,isArchived,isFork,isPrivate,primaryLanguage,pushedAt",
-		"--limit", "200",
+		"--limit", "1000",
 	).Output()
 	if err != nil {
 		return nil, fmt.Errorf("listing repos: %w", err)
@@ -200,7 +200,7 @@ func GetRepoSettings(owner, repo string) (*RepoCurrentSettings, error) {
 
 // UpdateRepoSettings applies the desired settings to a repo via PATCH.
 func UpdateRepoSettings(owner, repo string, settings RepoSettings) error {
-	return exec.Command("gh", "api",
+	cmd := exec.Command("gh", "api",
 		fmt.Sprintf("repos/%s/%s", owner, repo),
 		"-X", "PATCH",
 		"-F", fmt.Sprintf("has_wiki=%t", settings.HasWiki),
@@ -208,11 +208,23 @@ func UpdateRepoSettings(owner, repo string, settings RepoSettings) error {
 		"-F", fmt.Sprintf("allow_squash_merge=%t", settings.AllowSquashMerge),
 		"-F", fmt.Sprintf("allow_merge_commit=%t", settings.AllowMergeCommit),
 		"-F", fmt.Sprintf("allow_rebase_merge=%t", settings.AllowRebaseMerge),
-		"--silent",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("updating %s/%s: %w\n%s", owner, repo, err, string(out))
+	}
+	return nil
+}
+
+// DeleteBranch deletes a remote branch, ignoring errors if it doesn't exist.
+func DeleteBranch(owner, repo, branch string) {
+	exec.Command("gh", "api",
+		fmt.Sprintf("repos/%s/%s/git/refs/heads/%s", owner, repo, branch),
+		"-X", "DELETE",
 	).Run()
 }
 
 // CreateBranchAndPR creates a branch, commits a file change, and opens a PR.
+// It is idempotent: any existing branch with the same name is deleted first.
 func CreateBranchAndPR(owner, repo, branch, targetPath, content, commitMsg, prTitle, prBody string) error {
 	// Get default branch SHA
 	defaultBranch, err := GetDefaultBranch(owner, repo)
@@ -229,33 +241,26 @@ func CreateBranchAndPR(owner, repo, branch, targetPath, content, commitMsg, prTi
 	}
 	sha := strings.TrimSpace(string(refOut))
 
+	// Delete existing branch (idempotent)
+	DeleteBranch(owner, repo, branch)
+
 	// Create branch
-	createRef := fmt.Sprintf(`{"ref":"refs/heads/%s","sha":"%s"}`, branch, sha)
-	if err := exec.Command("gh", "api",
+	cmd := exec.Command("gh", "api",
 		fmt.Sprintf("repos/%s/%s/git/refs", owner, repo),
 		"-X", "POST",
-		"--input", "-",
-	).Run(); err != nil {
-		// Use a different approach — pipe the JSON
-		cmd := exec.Command("gh", "api",
-			fmt.Sprintf("repos/%s/%s/git/refs", owner, repo),
-			"-X", "POST",
-			"-f", fmt.Sprintf("ref=refs/heads/%s", branch),
-			"-f", fmt.Sprintf("sha=%s", sha),
-		)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("creating branch: %w (payload: %s)", err, createRef)
-		}
+		"-f", fmt.Sprintf("ref=refs/heads/%s", branch),
+		"-f", fmt.Sprintf("sha=%s", sha),
+	)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("creating branch: %w", err)
 	}
 
-	// Create/update file
+	// Create/update file on the new branch
 	encoded := encodeBase64(content)
-	// Check if file exists to get its SHA
 	existingSHA := ""
 	existOut, err := exec.Command("gh", "api",
 		fmt.Sprintf("repos/%s/%s/contents/%s", owner, repo, targetPath),
 		"-q", ".sha",
-		"--jq", ".sha",
 	).Output()
 	if err == nil {
 		existingSHA = strings.TrimSpace(string(existOut))

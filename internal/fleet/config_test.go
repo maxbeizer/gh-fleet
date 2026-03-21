@@ -12,12 +12,16 @@ func TestLoadConfig(t *testing.T) {
 owner = "testuser"
 
 [discovery]
-auto = true
 exclude = ["gh-skip-me"]
 
 [[sync.files]]
 canon = "canon/ci.yml"
 target = ".github/workflows/ci.yml"
+
+[[sync.files]]
+canon = "canon/copilot-instructions.md"
+target = ".github/copilot-instructions.md"
+skip_if_exists = true
 
 [[sync.files]]
 canon = "canon/Makefile"
@@ -27,10 +31,15 @@ template = true
 [sync.template_vars]
 GO_MIN_MAJOR = "1"
 GO_MIN_MINOR = "24"
+GO_MIN_PATCH = "0"
 
 [catalog]
 output = "README.md"
 header = "canon/readme-header.md"
+
+[settings]
+has_wiki = false
+delete_branch_on_merge = true
 `
 	if err := os.WriteFile(filepath.Join(dir, "fleet.toml"), []byte(tomlContent), 0644); err != nil {
 		t.Fatal(err)
@@ -44,20 +53,32 @@ header = "canon/readme-header.md"
 	if cfg.Owner != "testuser" {
 		t.Errorf("Owner = %q, want %q", cfg.Owner, "testuser")
 	}
-	if !cfg.Discovery.Auto {
-		t.Error("Discovery.Auto = false, want true")
-	}
 	if len(cfg.Discovery.Exclude) != 1 || cfg.Discovery.Exclude[0] != "gh-skip-me" {
 		t.Errorf("Exclude = %v, want [gh-skip-me]", cfg.Discovery.Exclude)
 	}
-	if len(cfg.Sync.Files) != 2 {
-		t.Errorf("Sync.Files length = %d, want 2", len(cfg.Sync.Files))
+	if len(cfg.Sync.Files) != 3 {
+		t.Errorf("Sync.Files length = %d, want 3", len(cfg.Sync.Files))
 	}
-	if cfg.Sync.Files[1].Template != true {
-		t.Error("Sync.Files[1].Template = false, want true")
+	if !cfg.Sync.Files[1].SkipIfExists {
+		t.Error("Sync.Files[1].SkipIfExists = false, want true")
+	}
+	if !cfg.Sync.Files[2].Template {
+		t.Error("Sync.Files[2].Template = false, want true")
 	}
 	if cfg.Sync.TemplateVars["GO_MIN_MAJOR"] != "1" {
 		t.Errorf("TemplateVars[GO_MIN_MAJOR] = %q, want %q", cfg.Sync.TemplateVars["GO_MIN_MAJOR"], "1")
+	}
+	if cfg.Sync.TemplateVars["GO_MIN_MINOR"] != "24" {
+		t.Errorf("TemplateVars[GO_MIN_MINOR] = %q, want %q", cfg.Sync.TemplateVars["GO_MIN_MINOR"], "24")
+	}
+	if cfg.Sync.TemplateVars["GO_MIN_PATCH"] != "0" {
+		t.Errorf("TemplateVars[GO_MIN_PATCH] = %q, want %q", cfg.Sync.TemplateVars["GO_MIN_PATCH"], "0")
+	}
+	if cfg.Settings.HasWiki == nil || *cfg.Settings.HasWiki != false {
+		t.Errorf("Settings.HasWiki = %v, want false", cfg.Settings.HasWiki)
+	}
+	if cfg.Settings.DeleteBranchOnMerge == nil || *cfg.Settings.DeleteBranchOnMerge != true {
+		t.Errorf("Settings.DeleteBranchOnMerge = %v, want true", cfg.Settings.DeleteBranchOnMerge)
 	}
 }
 

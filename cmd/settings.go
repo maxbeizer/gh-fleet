@@ -4,19 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	gh "github.com/maxbeizer/gh-fleet/internal/github"
 )
-
-// desiredSettings defines the enforced repo settings for the fleet.
-var desiredSettings = gh.RepoSettings{
-	HasWiki:             false,
-	DeleteBranchOnMerge: true,
-	AllowSquashMerge:    true,
-	AllowMergeCommit:    false,
-	AllowRebaseMerge:    false,
-}
 
 func runSettings(args []string) error {
 	fs := flag.NewFlagSet("settings", flag.ContinueOnError)
@@ -29,6 +21,15 @@ func runSettings(args []string) error {
 	cfg, err := loadConfig(*configDir)
 	if err != nil {
 		return err
+	}
+
+	hasWiki, deleteBranch, squash, mergeCommit, rebase := cfg.Settings.RepoSettings()
+	desiredSettings := gh.RepoSettings{
+		HasWiki:             hasWiki,
+		DeleteBranchOnMerge: deleteBranch,
+		AllowSquashMerge:    squash,
+		AllowMergeCommit:    mergeCommit,
+		AllowRebaseMerge:    rebase,
 	}
 
 	repos, err := discoverRepos(cfg)
@@ -83,14 +84,14 @@ func runSettings(args []string) error {
 			continue
 		}
 
-		r.needsfix = needsSettingsUpdate(r.current)
+		r.needsfix = needsSettingsUpdate(r.current, desiredSettings)
 		if !r.needsfix {
 			fmt.Printf("  %s %s\n", okStyle.Render("✅"), r.repo.Name)
 			totalOK++
 			continue
 		}
 
-		diffs := settingsDiff(r.current)
+		diffs := settingsDiff(r.current, desiredSettings)
 		fmt.Printf("  %s %s %s\n", warnStyle.Render("⇄"), r.repo.Name, dimStyle.Render(diffs))
 		totalChanged++
 
@@ -117,38 +118,30 @@ func runSettings(args []string) error {
 	return nil
 }
 
-func needsSettingsUpdate(s *gh.RepoCurrentSettings) bool {
-	return s.HasWiki != desiredSettings.HasWiki ||
-		s.DeleteBranchOnMerge != desiredSettings.DeleteBranchOnMerge ||
-		s.AllowSquashMerge != desiredSettings.AllowSquashMerge ||
-		s.AllowMergeCommit != desiredSettings.AllowMergeCommit ||
-		s.AllowRebaseMerge != desiredSettings.AllowRebaseMerge
+func needsSettingsUpdate(s *gh.RepoCurrentSettings, desired gh.RepoSettings) bool {
+	return s.HasWiki != desired.HasWiki ||
+		s.DeleteBranchOnMerge != desired.DeleteBranchOnMerge ||
+		s.AllowSquashMerge != desired.AllowSquashMerge ||
+		s.AllowMergeCommit != desired.AllowMergeCommit ||
+		s.AllowRebaseMerge != desired.AllowRebaseMerge
 }
 
-func settingsDiff(s *gh.RepoCurrentSettings) string {
+func settingsDiff(s *gh.RepoCurrentSettings, desired gh.RepoSettings) string {
 	var diffs []string
-	if s.HasWiki != desiredSettings.HasWiki {
+	if s.HasWiki != desired.HasWiki {
 		diffs = append(diffs, "wiki")
 	}
-	if s.DeleteBranchOnMerge != desiredSettings.DeleteBranchOnMerge {
+	if s.DeleteBranchOnMerge != desired.DeleteBranchOnMerge {
 		diffs = append(diffs, "delete-branch")
 	}
-	if s.AllowMergeCommit != desiredSettings.AllowMergeCommit {
+	if s.AllowMergeCommit != desired.AllowMergeCommit {
 		diffs = append(diffs, "merge-commit")
 	}
-	if s.AllowRebaseMerge != desiredSettings.AllowRebaseMerge {
+	if s.AllowRebaseMerge != desired.AllowRebaseMerge {
 		diffs = append(diffs, "rebase-merge")
 	}
-	if s.AllowSquashMerge != desiredSettings.AllowSquashMerge {
+	if s.AllowSquashMerge != desired.AllowSquashMerge {
 		diffs = append(diffs, "squash-merge")
 	}
-
-	result := ""
-	for i, d := range diffs {
-		if i > 0 {
-			result += ", "
-		}
-		result += d
-	}
-	return "(" + result + ")"
+	return "(" + strings.Join(diffs, ", ") + ")"
 }

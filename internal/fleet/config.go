@@ -14,11 +14,11 @@ type Config struct {
 	Discovery DiscoveryConfig `toml:"discovery"`
 	Sync      SyncConfig      `toml:"sync"`
 	Catalog   CatalogConfig   `toml:"catalog"`
+	Settings  SettingsConfig  `toml:"settings"`
 	Dir       string          `toml:"-"` // directory containing fleet.toml
 }
 
 type DiscoveryConfig struct {
-	Auto    bool     `toml:"auto"`
 	Exclude []string `toml:"exclude"`
 }
 
@@ -37,6 +37,29 @@ type SyncConfig struct {
 type CatalogConfig struct {
 	Output string `toml:"output"`
 	Header string `toml:"header"`
+}
+
+type SettingsConfig struct {
+	HasWiki             *bool `toml:"has_wiki"`
+	DeleteBranchOnMerge *bool `toml:"delete_branch_on_merge"`
+	AllowSquashMerge    *bool `toml:"allow_squash_merge"`
+	AllowMergeCommit    *bool `toml:"allow_merge_commit"`
+	AllowRebaseMerge    *bool `toml:"allow_rebase_merge"`
+}
+
+// RepoSettings returns the desired settings, using defaults for unset fields.
+func (s SettingsConfig) RepoSettings() (hasWiki, deleteBranch, squash, mergeCommit, rebase bool) {
+	boolVal := func(p *bool, def bool) bool {
+		if p != nil {
+			return *p
+		}
+		return def
+	}
+	return boolVal(s.HasWiki, false),
+		boolVal(s.DeleteBranchOnMerge, true),
+		boolVal(s.AllowSquashMerge, true),
+		boolVal(s.AllowMergeCommit, false),
+		boolVal(s.AllowRebaseMerge, false)
 }
 
 // FindConfigDir locates fleet.toml by checking: the given dir, CWD, then

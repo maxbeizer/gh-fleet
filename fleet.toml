@@ -39,3 +39,10 @@ GO_MIN_PATCH = "0"
 [catalog]
 output = "README.md"
 header = "canon/readme-header.md"
+
+[settings]
+has_wiki = false
+delete_branch_on_merge = true
+allow_squash_merge = true
+allow_merge_commit = false
+allow_rebase_merge = false

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -136,10 +137,12 @@ func compareVersions(a, b string) int {
 	pa := strings.Split(a, ".")
 	pb := strings.Split(b, ".")
 	for i := 0; i < len(pa) && i < len(pb); i++ {
-		if pa[i] < pb[i] {
+		na, _ := strconv.Atoi(pa[i])
+		nb, _ := strconv.Atoi(pb[i])
+		if na < nb {
 			return -1
 		}
-		if pa[i] > pb[i] {
+		if na > nb {
 			return 1
 		}
 	}
