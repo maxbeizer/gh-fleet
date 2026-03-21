@@ -2,7 +2,7 @@
 
 All notable changes to gh-fleet are documented here.
 
-## [Unreleased]
+## [0.2.0] — 2026-03-21
 
 ### Added
 - `skip_if_exists` flag for sync files — skips repos that already have their own version of a file
