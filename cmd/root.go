@@ -40,6 +40,8 @@ func Execute(version string) error {
 		return runStatus(args)
 	case "settings":
 		return runSettings(args)
+	case "pr":
+		return runPR(args)
 	default:
 		return fmt.Errorf("unknown command: %s\nRun 'gh fleet -h' for usage", subcmd)
 	}
@@ -54,6 +56,7 @@ Usage:
 Commands:
   catalog    Regenerate README with extension catalog
   drift      Detect configuration drift across repos
+  pr         List and manage open fleet PRs across repos
   settings   Enforce repo settings across the fleet
   sync       Push canonical files to out-of-sync repos
   status     Quick health matrix across all extension repos
