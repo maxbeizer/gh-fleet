@@ -215,6 +215,45 @@ func UpdateRepoSettings(owner, repo string, settings RepoSettings) error {
 	return nil
 }
 
+// ListSyncBranches returns branch names matching fleet/sync-* for a repo.
+func ListSyncBranches(owner, repo string) ([]string, error) {
+	out, err := exec.Command("gh", "api",
+		fmt.Sprintf("repos/%s/%s/git/matching-refs/heads/fleet/sync-", owner, repo),
+		"-q", ".[].ref",
+	).Output()
+	if err != nil {
+		return nil, fmt.Errorf("listing sync branches for %s/%s: %w", owner, repo, err)
+	}
+
+	var branches []string
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Strip refs/heads/ prefix
+		branches = append(branches, strings.TrimPrefix(line, "refs/heads/"))
+	}
+	return branches, nil
+}
+
+// BranchHasOpenPR checks whether a branch has an open pull request.
+func BranchHasOpenPR(owner, repo, branch string) (bool, error) {
+	out, err := exec.Command("gh", "pr", "list",
+		"--repo", fmt.Sprintf("%s/%s", owner, repo),
+		"--head", branch,
+		"--state", "open",
+		"--json", "number",
+		"-q", "length",
+	).Output()
+	if err != nil {
+		return false, fmt.Errorf("checking PRs for %s/%s branch %s: %w", owner, repo, branch, err)
+	}
+
+	count := strings.TrimSpace(string(out))
+	return count != "" && count != "0", nil
+}
+
 // DeleteBranch deletes a remote branch, ignoring errors if it doesn't exist.
 func DeleteBranch(owner, repo, branch string) {
 	exec.Command("gh", "api",
