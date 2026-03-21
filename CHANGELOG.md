@@ -2,6 +2,15 @@
 
 All notable changes to gh-fleet are documented here.
 
+## [0.3.0] — 2026-03-21
+
+### Added
+- `fleet clean` command — deletes stale `fleet/sync-*` branches across repos, skipping branches with open PRs
+- `fleet pr` command — lists, merges, or closes all open fleet PRs across repos; supports `--file` filter, `--merge`, `--close`, `--admin`
+- `fleet doctor` command — validates fleet.toml config (canon files exist, template vars match placeholders, catalog config)
+- Parallel sync — repos are now processed concurrently (semaphore=5) within each sync file
+- Dry-run scaffold preview — `sync --dry-run` shows a preview of scaffolded content for missing `skip_if_exists` files
+
 ## [0.2.0] — 2026-03-21
 
 ### Added

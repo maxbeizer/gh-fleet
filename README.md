@@ -16,6 +16,10 @@ gh fleet catalog      # regenerate this README with extension catalog
 gh fleet drift        # detect configuration drift across repos
 gh fleet sync         # push canonical files to out-of-sync repos
 gh fleet status       # quick health matrix across all extension repos
+gh fleet settings     # enforce repo settings across the fleet
+gh fleet clean        # delete stale fleet/sync-* branches
+gh fleet pr           # list/merge/close open fleet PRs across repos
+gh fleet doctor       # validate fleet.toml configuration
 ```
 
 ## How it works
