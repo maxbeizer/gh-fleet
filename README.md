@@ -38,7 +38,6 @@ gh fleet status       # quick health matrix across all extension repos
 | [gh-ghostty](https://github.com/maxbeizer/gh-ghostty) | Change your ghostty theme via the gh cli | Go | `gh ext install maxbeizer/gh-ghostty` |
 | [gh-hearth](https://github.com/maxbeizer/gh-hearth) | 🔥 A roaring fire for your terminal — a GitHub CLI ex... | Go | `gh ext install maxbeizer/gh-hearth` |
 | [gh-helm](https://github.com/maxbeizer/gh-helm) |  | Go | `gh ext install maxbeizer/gh-helm` |
-| [gh-inbox](https://github.com/maxbeizer/gh-inbox) | 📬 A rich TUI for managing GitHub notifications | Go | `gh ext install maxbeizer/gh-inbox` |
 | [gh-onion](https://github.com/maxbeizer/gh-onion) | America's finest news source in your terminal | Go | `gh ext install maxbeizer/gh-onion` |
 | [gh-oss](https://github.com/maxbeizer/gh-oss) | Find open source issues to work on — right from your te... | Go | `gh ext install maxbeizer/gh-oss` |
 | [gh-pagerduty](https://github.com/maxbeizer/gh-pagerduty) | GitHub CLI extension for PagerDuty — check on-call stat... | Go | `gh ext install maxbeizer/gh-pagerduty` |
