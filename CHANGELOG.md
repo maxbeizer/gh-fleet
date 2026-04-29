@@ -2,6 +2,12 @@
 
 All notable changes to gh-fleet are documented here.
 
+## [0.3.1] — 2026-04-29
+
+### Changed
+- Removed `gh-ghostty` and `gh-inbox` (both archived) from the active fleet
+- Auto-discovery already skips archived, forked, and private repos at the source
+
 ## [0.3.0] — 2026-03-21
 
 ### Added
