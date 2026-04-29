@@ -2,7 +2,7 @@ owner = "maxbeizer"
 
 [discovery]
 auto = true
-exclude = ["gh-aw-trial", "gh-combine-dependabot-prs"]
+exclude = ["gh-aw-trial", "gh-combine-dependabot-prs", "gh-ghostty"]
 
 [[sync.files]]
 canon = "canon/copilot-instructions.md"

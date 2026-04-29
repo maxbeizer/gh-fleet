@@ -35,7 +35,6 @@ gh fleet status       # quick health matrix across all extension repos
 | [gh-fishbowl](https://github.com/maxbeizer/gh-fishbowl) | A screen saver that goes bloop 🫧 | Go | `gh ext install maxbeizer/gh-fishbowl` |
 | [gh-fleet](https://github.com/maxbeizer/gh-fleet) | @maxbeizer's gh CLI extensions in one place | Go | `gh ext install maxbeizer/gh-fleet` |
 | [gh-games](https://github.com/maxbeizer/gh-games) | 🎮 Terminal games as a GitHub CLI extension  | Go | `gh ext install maxbeizer/gh-games` |
-| [gh-ghostty](https://github.com/maxbeizer/gh-ghostty) | Change your ghostty theme via the gh cli | Go | `gh ext install maxbeizer/gh-ghostty` |
 | [gh-hearth](https://github.com/maxbeizer/gh-hearth) | 🔥 A roaring fire for your terminal — a GitHub CLI ex... | Go | `gh ext install maxbeizer/gh-hearth` |
 | [gh-helm](https://github.com/maxbeizer/gh-helm) |  | Go | `gh ext install maxbeizer/gh-helm` |
 | [gh-onion](https://github.com/maxbeizer/gh-onion) | America's finest news source in your terminal | Go | `gh ext install maxbeizer/gh-onion` |
